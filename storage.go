@@ -1,19 +1,15 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
 	"os"
+
+	"github.com/krasun/rbytree"
 )
 
 type Storage struct {
-	entries []entry
+	entries *rbytree.Tree
 	file    *os.File
-}
-
-type entry struct {
-	key   []byte
-	value []byte
 }
 
 func Open(path string) (*Storage, error) {
@@ -47,19 +43,19 @@ func (s *Storage) Put(key []byte, value []byte) error {
 		return fmt.Errorf("failed to append to file %s: %w", s.file.Name(), err)
 	}
 
-	s.entries = append(s.entries, entry{key, value})
+	s.entries.Put(key, value)
 
 	return nil
 }
 
 func (s *Storage) Get(key []byte) ([]byte, bool, error) {
-	for _, entry := range s.entries {
-		if bytes.Equal(entry.key, key) {
-			return entry.value, true, nil
-		}
+	value, _ := s.entries.Get(key)
+	if value == nil {
+		// special case for deleted entry
+		return nil, false, nil
 	}
 
-	return nil, false, nil
+	return value, true, nil
 }
 
 func (s *Storage) Delete(key []byte) error {
@@ -67,7 +63,8 @@ func (s *Storage) Delete(key []byte) error {
 		return fmt.Errorf("failed to append to file %s: %w", s.file.Name(), err)
 	}
 
-	s.entries = deleteByKey(s.entries, key)
+	// special case for deleted entry
+	s.entries.Put(key, nil)
 
 	return nil
 }

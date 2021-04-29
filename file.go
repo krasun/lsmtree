@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"io"
 	"os"
+
+	"github.com/krasun/rbytree"
 )
 
 func putEntry(file *os.File, key []byte, value []byte) error {
@@ -30,8 +32,8 @@ func appendToFile(file *os.File, data []byte) error {
 	return nil
 }
 
-func loadEntries(file *os.File) ([]entry, error) {
-	entries := make([]entry, 0)
+func loadEntries(file *os.File) (*rbytree.Tree, error) {
+	entries := rbytree.New()
 	deleteKeys := make([][]byte, 0)
 	offset := 0
 	for {
@@ -42,7 +44,9 @@ func loadEntries(file *os.File) ([]entry, error) {
 		}
 		if n < 8 && err == io.EOF {
 			for _, deleteKey := range deleteKeys {
-				entries = deleteByKey(entries, deleteKey)
+				// we need to mark deleted key, to make sure
+				// it will be written to the sorted file
+				entries.Put(deleteKey, nil)
 			}
 
 			return entries, nil
@@ -62,7 +66,7 @@ func loadEntries(file *os.File) ([]entry, error) {
 		if deleted {
 			deleteKeys = append(deleteKeys, key)
 		} else {
-			entries = append(entries, entry{key, value})
+			entries.Put(key, value)
 		}
 	}
 }
