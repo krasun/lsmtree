@@ -6,6 +6,12 @@ import (
 
 func main() {
 	s, _ := Open("test.db")
+	defer func() {
+		err := s.Close()
+		if err != nil {
+			panic(fmt.Errorf("failed to close the storage: %w", err))
+		}
+	}()
 
 	s.Put([]byte("test"), []byte("val1"))
 	s.Put([]byte("test1"), []byte("val1"))
