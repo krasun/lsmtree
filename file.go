@@ -1,4 +1,4 @@
-package main
+package lsmtree
 
 import (
 	"fmt"

@@ -1,4 +1,4 @@
-module github.com/krasun/appendy
+module github.com/krasun/lsmtree
 
 go 1.14
 
