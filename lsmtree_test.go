@@ -2,14 +2,17 @@ package lsmtree_test
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
-	"path"
 
 	"github.com/krasun/lsmtree"
 )
 
 func Example() {
-	dbDir := path.Join(os.TempDir(), "lsmtree_example")
+	dbDir, err := ioutil.TempDir(os.TempDir(), "example")
+	if err != nil {
+		panic(fmt.Errorf("failed to create %s: %w", dbDir, err))
+	}
 	defer func() {
 		if err := os.RemoveAll(dbDir); err != nil {
 			panic(fmt.Errorf("failed to remove %s: %w", dbDir, err))
@@ -26,16 +29,6 @@ func Example() {
 		panic(fmt.Errorf("failed to put: %w", err))
 	}
 
-	value, ok, err := tree.Get([]byte("Hi!"))
-	if err != nil {
-		panic(fmt.Errorf("failed to get value: %w", err))
-	}
-	if !ok {
-		fmt.Println("failed to find value")
-	}
-
-	fmt.Println(string(value))
-
 	err = tree.Put([]byte("Does it override key?"), []byte("No!"))
 	if err != nil {
 		panic(fmt.Errorf("failed to put: %w", err))
@@ -46,7 +39,16 @@ func Example() {
 		panic(fmt.Errorf("failed to put: %w", err))
 	}
 
-	value, ok, err = tree.Get([]byte("Does it override key?"))
+	if err := tree.Close(); err != nil {
+		panic(fmt.Errorf("failed to close: %w", err))
+	}
+
+	tree, err = lsmtree.Open(dbDir)
+	if err != nil {
+		panic(fmt.Errorf("failed to open LSM tree %s: %w", dbDir, err))
+	}
+
+	value, ok, err := tree.Get([]byte("Hi!"))
 	if err != nil {
 		panic(fmt.Errorf("failed to get value: %w", err))
 	}
@@ -55,7 +57,21 @@ func Example() {
 	}
 
 	fmt.Println(string(value))
-	// Output: 
+
+	value, ok, err = tree.Get([]byte("Does it override key?"))
+	if err != nil {
+		panic(fmt.Errorf("failed to get value: %w", err))
+	}
+	if !ok {
+		fmt.Println("failed to find value")
+	}
+
+	if err := tree.Close(); err != nil {
+		panic(fmt.Errorf("failed to close: %w", err))
+	}
+
+	fmt.Println(string(value))
+	// Output:
 	// Hello world, LSMTree!
 	// Yes, absolutely! The key has been overridden.
 }

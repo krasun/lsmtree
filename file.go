@@ -17,6 +17,7 @@ func deleteEntry(file *os.File, key []byte) error {
 }
 
 func appendToFile(file *os.File, data []byte) error {
+	// for safety, since the file is open in read-write mode
 	if _, err := file.Seek(0, 2); err != nil {
 		return fmt.Errorf("failed to seek to the end: %w", err)
 	}
@@ -32,8 +33,8 @@ func appendToFile(file *os.File, data []byte) error {
 	return nil
 }
 
-func loadEntries(file *os.File) (*rbytree.Tree, error) {
-	entries := rbytree.New()
+func loadMemTable(file *os.File) (*rbytree.Tree, error) {
+	memTable := rbytree.New()
 	deleteKeys := make([][]byte, 0)
 	offset := 0
 	for {
@@ -46,15 +47,15 @@ func loadEntries(file *os.File) (*rbytree.Tree, error) {
 			for _, deleteKey := range deleteKeys {
 				// we need to mark deleted key, to make sure
 				// it will be written to the sorted file
-				entries.Put(deleteKey, nil)
+				memTable.Put(deleteKey, nil)
 			}
 
-			return entries, nil
+			return memTable, nil
 		}
 		offset += n
 
 		entryLen := decodeLen(encodedEntryLen[:])
-		encodedEntry := make([]byte, entryLen, entryLen)
+		encodedEntry := make([]byte, entryLen)
 		n, err = file.ReadAt(encodedEntry, int64(offset))
 
 		if n < entryLen {
@@ -66,7 +67,7 @@ func loadEntries(file *os.File) (*rbytree.Tree, error) {
 		if deleted {
 			deleteKeys = append(deleteKeys, key)
 		} else {
-			entries.Put(key, value)
+			memTable.Put(key, value)
 		}
 	}
 }
