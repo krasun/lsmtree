@@ -12,25 +12,25 @@ import (
 // WAL file name
 const walFileName = "wal"
 
-// LSMTree is goroutine-safe log-structure merge-tree implementation for storing
-// data in files.
-//
-// https://en.wikipedia.org/wiki/Log-structured_merge-tree
+// LSMTree (https://en.wikipedia.org/wiki/Log-structured_merge-tree)
+// is goroutine-safe log-structure merge-tree implementation for storing data in files.
 type LSMTree struct {
-	// before executing any write operation,
-	// it is written to the write-ahead log (WAL) and only then applied
+	// Before executing any write operation,
+	// it is written to the write-ahead log (WAL) and only then applied.
 	wal *os.File
-	// all changes that are flushed to the WAL, but not flushed
-	// to the sorted files, are stored in memory for faster lookups
+	// All changes that are flushed to the WAL, but not flushed
+	// to the sorted files, are stored in memory for faster lookups.
 	memTable *rbytree.Tree
-	// dbDir to the directory that stores LSM tree files,
+	// The path to the directory that stores LSM tree files,
 	// it is required to provide dedicated directory for each
-	// instance of the tree
+	// instance of the tree.
 	dbDir string
-	// global read-write lock for the tree
+	// Global read-write lock for the tree. Only writer is allowed at time.
 	rwlock *sync.RWMutex
 }
 
+// Open opens the database. Only one instance of the tree is allowed to
+// read and write to the directory.
 func Open(dbDir string) (*LSMTree, error) {
 	if _, err := os.Stat(dbDir); os.IsNotExist(err) {
 		err := os.Mkdir(dbDir, 0600)
@@ -53,6 +53,7 @@ func Open(dbDir string) (*LSMTree, error) {
 	return &LSMTree{wal: f, memTable: memTable, dbDir: dbDir, rwlock: &sync.RWMutex{}}, nil
 }
 
+// Close closes all allocated resources.
 func (s *LSMTree) Close() error {
 	if err := s.wal.Close(); err != nil {
 		return fmt.Errorf("failed to close file %s: %w", s.wal.Name(), err)
@@ -61,10 +62,14 @@ func (s *LSMTree) Close() error {
 	return nil
 }
 
+// Put puts the key into the db.
 func (s *LSMTree) Put(key []byte, value []byte) error {
 	if key == nil || value == nil {
 		return fmt.Errorf("key/value can not be nil")
 	}
+
+	s.rwlock.Lock()
+	defer s.rwlock.Unlock()
 
 	if err := putEntry(s.wal, key, value); err != nil {
 		return fmt.Errorf("failed to append to file %s: %w", s.wal.Name(), err)
@@ -75,7 +80,11 @@ func (s *LSMTree) Put(key []byte, value []byte) error {
 	return nil
 }
 
+// Get the value for the key from the db.
 func (s *LSMTree) Get(key []byte) ([]byte, bool, error) {
+	s.rwlock.RLock()
+	defer s.rwlock.RLock()
+
 	value, _ := s.memTable.Get(key)
 	if value == nil {
 		// special case for deleted entry
@@ -85,7 +94,11 @@ func (s *LSMTree) Get(key []byte) ([]byte, bool, error) {
 	return value, true, nil
 }
 
+// Delete delete the value by key from the db.
 func (s *LSMTree) Delete(key []byte) error {
+	s.rwlock.Lock()
+	defer s.rwlock.Unlock()
+
 	if err := deleteEntry(s.wal, key); err != nil {
 		return fmt.Errorf("failed to append to file %s: %w", s.wal.Name(), err)
 	}
