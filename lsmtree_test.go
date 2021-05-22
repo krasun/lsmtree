@@ -1,9 +1,11 @@
 package lsmtree_test
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
+	"testing"
 
 	"github.com/krasun/lsmtree"
 )
@@ -74,4 +76,53 @@ func Example() {
 	// Output:
 	// Hello world, LSMTree!
 	// Yes, absolutely! The key has been overridden.
+}
+
+func TestPutForErrors(t *testing.T) {
+	dbDir, err := ioutil.TempDir(os.TempDir(), "example")
+	if err != nil {
+		panic(fmt.Errorf("failed to create %s: %w", dbDir, err))
+	}
+	defer func() {
+		if err := os.RemoveAll(dbDir); err != nil {
+			panic(fmt.Errorf("failed to remove %s: %w", dbDir, err))
+		}
+	}()
+
+	tree, err := lsmtree.Open(dbDir)
+	if err != nil {
+		panic(fmt.Errorf("failed to open LSM tree %s: %w", dbDir, err))
+	}
+
+	err = tree.Put(nil, []byte("some value"))
+	if !errors.Is(err, lsmtree.ErrKeyRequired) {
+		t.Fatalf("expected %v, but got %v", lsmtree.ErrKeyRequired, err)
+	}
+
+	err = tree.Put([]byte{}, []byte("some value"))
+	if !errors.Is(err, lsmtree.ErrKeyRequired) {
+		t.Fatalf("expected %v, but got %v", lsmtree.ErrKeyRequired, err)
+	}
+
+	err = tree.Put([]byte("some key"), nil)
+	if !errors.Is(err, lsmtree.ErrValueRequired) {
+		t.Fatalf("expected %v, but got %v", lsmtree.ErrValueRequired, err)
+	}
+
+	err = tree.Put([]byte("some key"), []byte{})
+	if !errors.Is(err, lsmtree.ErrValueRequired) {
+		t.Fatalf("expected %v, but got %v", lsmtree.ErrValueRequired, err)
+	}
+
+	var largeKey [65536]byte
+	err = tree.Put(largeKey[:], []byte("some value"))
+	if !errors.Is(err, lsmtree.ErrKeyTooLarge) {
+		t.Fatalf("expected %v, but got %v", lsmtree.ErrKeyTooLarge, err)
+	}
+
+	var largeValue [4294967296]byte
+	err = tree.Put([]byte("some key"), largeValue[:])
+	if !errors.Is(err, lsmtree.ErrValueTooLarge) {
+		t.Fatalf("expected %v, but got %v", lsmtree.ErrValueTooLarge, err)
+	}
 }
