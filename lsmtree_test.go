@@ -21,7 +21,7 @@ func Example() {
 		}
 	}()
 
-	tree, err := lsmtree.Open(dbDir)
+	tree, err := lsmtree.Open(dbDir, lsmtree.SparseKeyDistance(64), lsmtree.MemTableThreshold(1000000))
 	if err != nil {
 		panic(fmt.Errorf("failed to open LSM tree %s: %w", dbDir, err))
 	}

@@ -22,7 +22,7 @@ go get github.com/krasun/lsmtree
 
 A fully-featured example:
 
-```
+```go
 package lsmtree_test
 
 import (
@@ -44,7 +44,7 @@ func Example() {
 		}
 	}()
 
-	tree, err := lsmtree.Open(dbDir)
+	tree, err := lsmtree.Open(dbDir, lsmtree.SparseKeyDistance(64), lsmtree.MemTableThreshold(1000000))
 	if err != nil {
 		panic(fmt.Errorf("failed to open LSM tree %s: %w", dbDir, err))
 	}
@@ -108,18 +108,19 @@ To make sure that the code is fully tested and covered:
 
 ```
 $ go test -cover .
-ok  	github.com/krasun/lsmtree	0.675s	coverage: 100.0% of statements
+ok  	github.com/krasun/lsmtree	0.984s	coverage: 69.3% of statements
 ```
 
 ## TODO
 
+- [ ] use specific types instead of int for encoding and check overflows
+- [ ] use global mutex for thread-safety?!
 - [ ] strategies for merge and flush 
 - [ ] files check sum https://golang.org/pkg/hash/crc32/#example_MakeTable
 - [ ] bloom filter file https://llimllib.github.io/bloomfilter-tutorial/ 
 - [ ] 100% coverage
 - [ ] performance tests
 - [ ] option to write to file without sync, or "periodic" sync (with lock)
-- [ ] use specific types instead of int for encoding and check overflows
 
 ## Known Usages 
 
