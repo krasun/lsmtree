@@ -73,7 +73,13 @@ func searchInDiskTable(dbDir string, index int, key []byte) ([]byte, bool, error
 	prefix := strconv.Itoa(index) + "-"
 
 	sparseIndexPath := path.Join(dbDir, prefix+diskTableSparseIndexFileName)
-	from, to, ok, err := searchInSparseIndex(sparseIndexPath, key)
+	sparseIndexFile, err := os.OpenFile(sparseIndexPath, os.O_RDONLY, 0600)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to open sparse index file: %w", err)
+	}
+	defer sparseIndexFile.Close()
+
+	from, to, ok, err := searchInSparseIndex(sparseIndexFile, key)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to search in sparse index file %s: %w", sparseIndexPath, err)
 	}
@@ -82,7 +88,13 @@ func searchInDiskTable(dbDir string, index int, key []byte) ([]byte, bool, error
 	}
 
 	indexPath := path.Join(dbDir, prefix+diskTableIndexFileName)
-	offset, ok, err := searchInIndex(indexPath, from, to, key)
+	indexFile, err := os.OpenFile(indexPath, os.O_RDONLY, 0600)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to open index file: %w", err)
+	}
+	defer indexFile.Close()
+
+	offset, ok, err := searchInIndex(indexFile, from, to, key)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to search in index file %s: %w", indexPath, err)
 	}
@@ -91,9 +103,27 @@ func searchInDiskTable(dbDir string, index int, key []byte) ([]byte, bool, error
 	}
 
 	dataPath := path.Join(dbDir, prefix+diskTableDataFileName)
-	value, ok, err := searchInDataFile(dataPath, offset, key)
+	dataFile, err := os.OpenFile(dataPath, os.O_RDONLY, 0600)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to open data file: %w", err)
+	}
+	defer dataFile.Close()
+
+	value, ok, err := searchInDataFile(dataFile, offset, key)
 	if err != nil {
 		return nil, false, fmt.Errorf("failed to search in data file %s: %w", dataPath, err)
+	}
+
+	if err := sparseIndexFile.Close(); err != nil {
+		return nil, false, fmt.Errorf("failed to close sparse index file: %w", err)
+	}
+
+	if err := indexFile.Close(); err != nil {
+		return nil, false, fmt.Errorf("failed to close index file: %w", err)
+	}
+
+	if err := dataFile.Close(); err != nil {
+		return nil, false, fmt.Errorf("failed to close data file: %w", err)
 	}
 
 	return value, ok, nil
@@ -101,19 +131,13 @@ func searchInDiskTable(dbDir string, index int, key []byte) ([]byte, bool, error
 
 // searchInDataFile searches a value by the key in the data file from the given offset.
 // The offset must always point to the beginning of the record.
-func searchInDataFile(path string, offset int, searchKey []byte) ([]byte, bool, error) {
-	f, err := os.OpenFile(path, os.O_RDONLY, 0600)
-	if err != nil {
-		return nil, false, err
-	}
-	defer f.Close()
-
-	if _, err := f.Seek(int64(offset), io.SeekCurrent); err != nil {
+func searchInDataFile(r io.ReadSeeker, offset int, searchKey []byte) ([]byte, bool, error) {
+	if _, err := r.Seek(int64(offset), io.SeekStart); err != nil {
 		return nil, false, fmt.Errorf("failed to seek: %w", err)
 	}
 
 	for {
-		key, value, err := decode(f)
+		key, value, err := decode(r)
 		if err != nil && err != io.EOF {
 			return nil, false, fmt.Errorf("failed to read: %w", err)
 		}
@@ -128,19 +152,13 @@ func searchInDataFile(path string, offset int, searchKey []byte) ([]byte, bool, 
 }
 
 // searchInIndex searches key in the index file in specified range.
-func searchInIndex(path string, from, to int, searchKey []byte) (int, bool, error) {
-	f, err := os.OpenFile(path, os.O_RDONLY, 0600)
-	if err != nil {
-		return 0, false, err
-	}
-	defer f.Close()
-
-	if _, err := f.Seek(int64(from), io.SeekStart); err != nil {
+func searchInIndex(r io.ReadSeeker, from, to int, searchKey []byte) (int, bool, error) {
+	if _, err := r.Seek(int64(from), io.SeekStart); err != nil {
 		return 0, false, fmt.Errorf("failed to seek: %w", err)
 	}
 
 	for {
-		key, value, err := decode(f)
+		key, value, err := decode(r)
 		if err != nil && err != io.EOF {
 			return 0, false, fmt.Errorf("failed to read: %w", err)
 		}
@@ -154,7 +172,7 @@ func searchInIndex(path string, from, to int, searchKey []byte) (int, bool, erro
 		}
 
 		if to > from {
-			current, err := f.Seek(0, io.SeekCurrent)
+			current, err := r.Seek(0, io.SeekCurrent)
 			if err != nil {
 				return 0, false, fmt.Errorf("failed to seek: %w", err)
 			}
@@ -167,16 +185,10 @@ func searchInIndex(path string, from, to int, searchKey []byte) (int, bool, erro
 }
 
 // searchInSparseIndex searches a range between which the key is located.
-func searchInSparseIndex(path string, searchKey []byte) (int, int, bool, error) {
-	f, err := os.OpenFile(path, os.O_RDONLY, 0600)
-	if err != nil {
-		return 0, 0, false, err
-	}
-	defer f.Close()
-
+func searchInSparseIndex(r io.Reader, searchKey []byte) (int, int, bool, error) {
 	from := -1
 	for {
-		key, value, err := decode(f)
+		key, value, err := decode(r)
 		if err != nil && err != io.EOF {
 			return 0, 0, false, fmt.Errorf("failed to read: %w", err)
 		}

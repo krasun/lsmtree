@@ -3,6 +3,7 @@ package lsmtree
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path"
@@ -113,8 +114,14 @@ func TestSearchInDataFile(t *testing.T) {
 		{[]byte("k"), nil, false, false, 0},
 	}
 
+	dataFile, err := os.OpenFile(path.Join(dbDir, "0-data.db"), os.O_RDONLY, 0600)
+	if err != nil {
+		t.Fatalf("failed to open data file: %s", err)
+	}
+	defer dataFile.Close()
+
 	for _, c := range cases {
-		value, ok, err := searchInDataFile(path.Join(dbDir, "0-data.db"), c.offset, c.key)
+		value, ok, err := searchInDataFile(dataFile, c.offset, c.key)
 		if !((c.value == nil && value == nil) || (bytes.Equal(c.value, value))) {
 			t.Fatalf("values do not match for %s, err = %v: %s != %s", string(c.key), err, string(c.value), string(value))
 		}
@@ -148,8 +155,14 @@ func TestSearchInIndex(t *testing.T) {
 		{[]byte("k"), 150, 0, false, false, 0},
 	}
 
+	indexFile, err := os.OpenFile(path.Join(dbDir, "0-index.db"), os.O_RDONLY, 0600)
+	if err != nil {
+		t.Fatalf("failed to open index file: %s", err)
+	}
+	defer indexFile.Close()
+
 	for _, c := range cases {
-		offset, ok, err := searchInIndex(path.Join(dbDir, "0-index.db"), c.from, c.to, c.key)
+		offset, ok, err := searchInIndex(indexFile, c.from, c.to, c.key)
 		if c.offset != offset {
 			t.Fatalf("offset does not match for %s, err = %v: %d != %d", string(c.key), err, c.offset, offset)
 		}
@@ -182,8 +195,15 @@ func TestSearchInSparseIndex(t *testing.T) {
 		{[]byte("k"), 150, 0, true, false},
 	}
 
+	sparseIndexFile, err := os.OpenFile(path.Join(dbDir, "0-sparse.db"), os.O_RDONLY, 0600)
+	if err != nil {
+		t.Fatalf("failed to open sparse index file: %s", err)
+	}
+	defer sparseIndexFile.Close()
+
 	for _, c := range cases {
-		from, to, ok, err := searchInSparseIndex(path.Join(dbDir, "0-sparse.db"), c.key)
+		sparseIndexFile.Seek(0, io.SeekStart)
+		from, to, ok, err := searchInSparseIndex(sparseIndexFile, c.key)
 		if c.from != from || c.to != to {
 			t.Fatalf("from and to do not match for %s, err = %v: %d != %d or %d != %d", string(c.key), err, c.from, from, c.to, to)
 		}
