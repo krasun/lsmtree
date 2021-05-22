@@ -106,6 +106,7 @@ func searchInDataFile(path string, offset int, searchKey []byte) ([]byte, bool, 
 	if err != nil {
 		return nil, false, err
 	}
+	defer f.Close()
 
 	if _, err := f.Seek(int64(offset), io.SeekCurrent); err != nil {
 		return nil, false, fmt.Errorf("failed to seek: %w", err)
@@ -132,6 +133,7 @@ func searchInIndex(path string, from, to int, searchKey []byte) (int, bool, erro
 	if err != nil {
 		return 0, false, err
 	}
+	defer f.Close()
 
 	if _, err := f.Seek(int64(from), io.SeekStart); err != nil {
 		return 0, false, fmt.Errorf("failed to seek: %w", err)
@@ -170,6 +172,7 @@ func searchInSparseIndex(path string, searchKey []byte) (int, int, bool, error) 
 	if err != nil {
 		return 0, 0, false, err
 	}
+	defer f.Close()
 
 	from := -1
 	for {

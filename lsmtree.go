@@ -96,6 +96,15 @@ func SparseKeyDistance(sparseKeyDistance int) func(*LSMTree) {
 	}
 }
 
+// DiskTableNumThreshold sets diskTableNumThreshold for LSMTree.
+// If DiskTable number passes the threshold, disk tables must be
+// merged to decrease it.
+func DiskTableNumThreshold(diskTableNumThreshold int) func(*LSMTree) {
+	return func(t *LSMTree) {
+		t.diskTableNumThreshold = diskTableNumThreshold
+	}
+}
+
 // Open opens the database. Only one instance of the tree is allowed to
 // read and write to the directory.
 func Open(dbDir string, options ...func(*LSMTree)) (*LSMTree, error) {
@@ -170,9 +179,17 @@ func (t *LSMTree) Put(key []byte, value []byte) error {
 	}
 
 	if t.diskTableNum >= t.diskTableNumThreshold {
-		if err := mergeDiskTables(t.dbDir, 0, 1, t.sparseKeyDistance); err != nil {
+		oldest := t.maxDiskTableIndex - t.diskTableNum + 1
+		if err := mergeDiskTables(t.dbDir, oldest, oldest+1, t.sparseKeyDistance); err != nil {
 			return fmt.Errorf("failed to merge disk tables: %w", err)
 		}
+
+		newDiskTableNum := t.diskTableNum - 1
+		if err := updateDiskTableMeta(t.dbDir, newDiskTableNum, t.maxDiskTableIndex); err != nil {
+			return fmt.Errorf("failed to update disk table meta: %w", err)
+		}
+
+		t.diskTableNum--
 	}
 
 	return nil
