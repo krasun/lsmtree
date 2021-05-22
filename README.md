@@ -107,8 +107,8 @@ func Example() {
 To make sure that the code is fully tested and covered:
 
 ```
-$ go test -cover .
-ok  	github.com/krasun/lsmtree	0.984s	coverage: 69.3% of statements
+$ go test .
+ok  	github.com/krasun/lsmtree	2.888s
 ```
 
 ## Known Usages 
