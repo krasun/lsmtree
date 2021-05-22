@@ -111,17 +111,6 @@ $ go test -cover .
 ok  	github.com/krasun/lsmtree	0.984s	coverage: 69.3% of statements
 ```
 
-## TODO
-
-- [ ] use specific types instead of int for encoding and check overflows
-- [ ] use global mutex for thread-safety?!
-- [ ] strategies for merge and flush 
-- [ ] files check sum https://golang.org/pkg/hash/crc32/#example_MakeTable
-- [ ] bloom filter file https://llimllib.github.io/bloomfilter-tutorial/ 
-- [ ] 100% coverage
-- [ ] performance tests
-- [ ] option to write to file without sync, or "periodic" sync (with lock)
-
 ## Known Usages 
 
 1. [krasun/gosqldb](https://github.com/krasun/gosqldb) - my experimental implementation of a simple database.
