@@ -15,7 +15,7 @@ func TestEncodePut(t *testing.T) {
 	}
 
 	// total = 14, key = 3, key and value
-	expected := []byte{14, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6}
+	expected := []byte{0, 0, 0, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 3, 4, 5, 6}
 	if !bytes.Equal(expected, buffer.Bytes()) {
 		t.Fatalf("failed to encoded key/value, expected %v, but received %v", expected, buffer.Bytes())
 	}
@@ -30,14 +30,14 @@ func TestEncodeDelete(t *testing.T) {
 	}
 
 	// total = 11, key = 3, key and value
-	expected := []byte{11, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3}
+	expected := []byte{0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 3}
 	if !bytes.Equal(expected, buffer.Bytes()) {
 		t.Fatalf("failed to encode key/value, expected %v, but received %v", expected, buffer.Bytes())
 	}
 }
 
 func TestDecodePut(t *testing.T) {
-	data := []byte{14, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6}
+	data := []byte{0, 0, 0, 0, 0, 0, 0, 14, 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 3, 4, 5, 6}
 	buffer := bytes.NewBuffer(data)
 
 	key, value, err := decode(buffer)
@@ -55,7 +55,7 @@ func TestDecodePut(t *testing.T) {
 }
 
 func TestDecodeDelete(t *testing.T) {
-	data := []byte{11, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3}
+	data := []byte{0, 0, 0, 0, 0, 0, 0, 11, 0, 0, 0, 0, 0, 0, 0, 3, 1, 2, 3}
 	buffer := bytes.NewBuffer(data)
 
 	key, value, err := decode(buffer)

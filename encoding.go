@@ -93,7 +93,7 @@ func encodeKeyOffset(key []byte, offset int, w io.Writer) (int, error) {
 // Must be compatible with decodeInt.
 func encodeInt(x int) []byte {
 	var encoded [8]byte
-	binary.LittleEndian.PutUint64(encoded[:], uint64(x))
+	binary.BigEndian.PutUint64(encoded[:], uint64(x))
 
 	return encoded[:]
 }
@@ -101,22 +101,22 @@ func encodeInt(x int) []byte {
 // decodeInt decodes the slice of bytes as an int.
 // Must be compatible with encodeInt.
 func decodeInt(encoded []byte) int {
-	return int(binary.LittleEndian.Uint64(encoded))
+	return int(binary.BigEndian.Uint64(encoded))
 }
 
 // encodeIntPair encodes two ints.
 func encodeIntPair(x, y int) []byte {
 	var encoded [16]byte
-	binary.LittleEndian.PutUint64(encoded[0:8], uint64(x))
-	binary.LittleEndian.PutUint64(encoded[8:], uint64(y))
+	binary.BigEndian.PutUint64(encoded[0:8], uint64(x))
+	binary.BigEndian.PutUint64(encoded[8:], uint64(y))
 
 	return encoded[:]
 }
 
 // decodeIntPair decodes two ints.
 func decodeIntPair(encoded []byte) (int, int) {
-	x := int(binary.LittleEndian.Uint64(encoded[0:8]))
-	y := int(binary.LittleEndian.Uint64(encoded[8:]))
+	x := int(binary.BigEndian.Uint64(encoded[0:8]))
+	y := int(binary.BigEndian.Uint64(encoded[8:]))
 
 	return x, y
 }
