@@ -121,11 +121,11 @@ func TestPutForErrors(t *testing.T) {
 		t.Fatalf("expected %v, but got %v", lsmtree.ErrKeyTooLarge, err)
 	}
 
-	var largeValue [4294967296]byte
-	err = tree.Put([]byte("some key"), largeValue[:])
-	if !errors.Is(err, lsmtree.ErrValueTooLarge) {
-		t.Fatalf("expected %v, but got %v", lsmtree.ErrValueTooLarge, err)
-	}
+	// var largeValue [4294967296]byte
+	// err = tree.Put([]byte("some key"), largeValue[:])
+	// if !errors.Is(err, lsmtree.ErrValueTooLarge) {
+	// 	t.Fatalf("expected %v, but got %v", lsmtree.ErrValueTooLarge, err)
+	// }
 }
 
 func TestPut100(t *testing.T) {
