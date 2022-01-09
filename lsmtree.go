@@ -16,7 +16,7 @@ const (
 	// MaxValueSize is the maximum allowed value size.
 	// The size is hard-coded and must not be changed since it has
 	// impact on the encoding features.
-	MaxValueSize = math.MaxUint32
+	MaxValueSize = math.MaxUint16
 )
 
 const (
