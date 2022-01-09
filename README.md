@@ -1,6 +1,6 @@
 # lsmtree
 
-[![Build Status](https://app.travis-ci.com/krasun/lsmtree.svg?branch=main)](https://app.travis-ci.com/krasun/lsmtree)
+[![Build](https://github.com/krasun/lsmtree/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/krasun/lsmtree/actions/workflows/build.yml)
 [![codecov](https://codecov.io/gh/krasun/lsmtree/branch/main/graph/badge.svg?token=8NU6LR4FQD)](https://codecov.io/gh/krasun/lsmtree)
 [![Go Report Card](https://goreportcard.com/badge/github.com/krasun/lsmtree)](https://goreportcard.com/report/github.com/krasun/lsmtree)
 [![GoDoc](https://godoc.org/https://godoc.org/github.com/krasun/lsmtree?status.svg)](https://godoc.org/github.com/krasun/lsmtree)
