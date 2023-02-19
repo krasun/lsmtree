@@ -33,11 +33,11 @@ const (
 var (
 	// ErrKeyRequired is returned when putting a zero-length key or nil.
 	ErrKeyRequired = errors.New("key required")
-	// ErrKeyRequired is returned when putting a zero-length value or nil.
+	// ErrValueRequired is returned when putting a zero-length value or nil.
 	ErrValueRequired = errors.New("value required")
 	// ErrKeyTooLarge is returned when putting a key that is larger than MaxKeySize.
 	ErrKeyTooLarge = errors.New("key too large")
-	// ErrKeyTooLarge is returned when putting a value that is larger than MaxValueSize.
+	// ErrValueTooLarge is returned when putting a value that is larger than MaxValueSize.
 	ErrValueTooLarge = errors.New("value too large")
 )
 
