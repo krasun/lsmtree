@@ -41,6 +41,8 @@ func (mt *memTable) get(key []byte) ([]byte, bool) {
 func (mt *memTable) delete(key []byte) error {
 	value, exists := mt.data.Put(key, nil)
 	if !exists {
+		mt.b += len(key)
+	} else {
 		mt.b -= len(value)
 	}
 
